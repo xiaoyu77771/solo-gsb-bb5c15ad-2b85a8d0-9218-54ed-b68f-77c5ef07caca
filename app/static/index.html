@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>两两决策台 · Schulze 评审</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>⚖️ 两两决策台</h1>
+    <span class="subtitle">逐对比较 · Schulze 最强路径实时排名</span>
+  </header>
+
+  <main class="container">
+    <!-- 录入候选项 -->
+    <section id="setup-view" class="card">
+      <h2>① 粘贴候选项</h2>
+      <p class="hint">每行一个候选项，支持 <strong>3～12</strong> 个；空行自动忽略，重名自动去重。</p>
+      <textarea id="candidate-input" rows="10"
+        placeholder="方案 A&#10;方案 B&#10;方案 C&#10;…"></textarea>
+      <div class="row">
+        <span id="setup-error" class="error" hidden></span>
+        <button id="start-btn" class="btn primary">开始本轮评审 →</button>
+      </div>
+    </section>
+
+    <!-- 评审台 -->
+    <section id="arena-view" hidden>
+      <div class="card status-card">
+        <div class="status-info">
+          <h2 id="round-title">本轮评审</h2>
+          <p class="hint">
+            共 <span id="cand-count">0</span> 个候选项 ·
+            已评判 <strong id="judged-count">0</strong>/<span id="total-count">0</span> 对
+            （<span id="dec-count">0</span> 分胜负，<span id="tie-count">0</span> 平局）
+          </p>
+          <div class="progress"><div id="progress-bar"></div></div>
+          <p id="complete-banner" class="banner" hidden>🎉 全部组合评判完毕，最终排名已确定。</p>
+        </div>
+        <div class="status-actions">
+          <button id="undo-btn" class="btn" title="撤销最近一次判断（Ctrl+Z）">↩ 撤销</button>
+          <button id="reset-btn" class="btn warn">♻ 重置本轮</button>
+          <button id="new-round-btn" class="btn">✎ 新一轮</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <!-- 当前待判 -->
+        <div class="card focus-card">
+          <h2>② 当前比较</h2>
+          <div id="focus-pair">
+            <div class="pair">
+              <button class="candidate left" id="pick-a" title="快捷键 ←">
+                <span class="vote-hint">← A 胜</span>
+                <span class="cand-name" id="name-a"></span>
+              </button>
+              <span class="vs">VS</span>
+              <button class="candidate right" id="pick-b" title="快捷键 →">
+                <span class="vote-hint">B 胜 →</span>
+                <span class="cand-name" id="name-b"></span>
+              </button>
+            </div>
+            <button id="pick-tie" class="btn tie full" title="快捷键 T">＝ 平局（T）</button>
+          </div>
+          <p id="no-pending" class="banner" hidden>没有待评判的组合了。</p>
+        </div>
+
+        <!-- 实时排名 -->
+        <div class="card rank-card">
+          <h2>③ 实时排名（Schulze）</h2>
+          <ol id="ranking" class="ranking"></ol>
+          <p class="hint tiny">
+            同色徽章且名次相同者为<strong>并列组</strong>；尚未比较的组合按“无偏好（0 票）”计入，
+            排名会随着判断实时更新。
+          </p>
+        </div>
+      </div>
+
+      <div class="grid two-col">
+        <!-- 尚未比较 -->
+        <div class="card">
+          <h2>④ 尚未比较的组合（<span id="pending-num">0</span>）</h2>
+          <div id="pending-list" class="chips"></div>
+        </div>
+        <!-- 判断历史 -->
+        <div class="card">
+          <h2>⑤ 判断记录（<span id="history-num">0</span>）</h2>
+          <ul id="history-list" class="history"></ul>
+        </div>
+      </div>
+
+      <!-- 胜负矩阵 -->
+      <div class="card">
+        <h2>⑥ 胜负矩阵</h2>
+        <div class="seg">
+          <button class="seg-btn active" data-matrix="d">直接偏好矩阵 d</button>
+          <button class="seg-btn" data-matrix="p">最强路径矩阵 p</button>
+        </div>
+        <p class="hint tiny" id="matrix-hint">
+          行优于列记 <strong>1</strong>，否则记 <strong>0</strong>；平局两侧均为 0。对角线为 —。
+        </p>
+        <div class="matrix-wrap"><table id="matrix-table" class="matrix"></table></div>
+        <details class="method">
+          <summary>Schulze 方法说明</summary>
+          <p>
+            对任意 i→j，<code>d[i][j]</code> 表示直接认为 i 优于 j 的次数（单评审场景下为 1 或 0）。
+            最强路径强度 <code>p[i][j] = max（路径上各段强度的最小值）</code>，用 Floyd–Warshall 计算。
+            若 <code>p[i][j] &gt; p[j][i]</code>，则 i 排在 j 前面；两两不可区分者归为同一并列组。
+          </p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

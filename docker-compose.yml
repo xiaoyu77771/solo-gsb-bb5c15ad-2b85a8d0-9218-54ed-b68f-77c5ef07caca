@@ -1,0 +1,16 @@
+services:
+  decider:
+    build: .
+    container_name: pairwise-decider
+    ports:
+      - "8000:8000"
+    volumes:
+      - decider-data:/app/data
+    environment:
+      - DB_PATH=/app/data/deciders.db
+      - HOST=0.0.0.0
+      - PORT=8000
+    restart: unless-stopped
+
+volumes:
+  decider-data:
